@@ -1,0 +1,4 @@
+artist_id,display_name,age,age_group,region,mentor_type,registered_at
+artist_0001,Young Artist 01,9,6-9,Moscow,Art Club,2025-01-02T00:00:00+00:00
+artist_0002,Young Artist 02,12,10-13,Kazan,Museum Lab,2025-01-03T00:00:00+00:00
+artist_0003,Young Artist 03,16,14-17,Perm,Online Course,2025-01-04T00:00:00+00:00

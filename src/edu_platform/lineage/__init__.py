@@ -1,0 +1,2 @@
+"""Lineage metadata emitters."""
+

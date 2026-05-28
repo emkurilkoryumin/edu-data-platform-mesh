@@ -1,0 +1,6 @@
+name: gallery_raw_checkpoint
+config_version: 1.0
+class_name: Checkpoint
+validations:
+  - expectation_suite_name: raw_artwork_submissions
+  - expectation_suite_name: raw_artist_profiles

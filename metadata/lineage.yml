@@ -1,0 +1,28 @@
+domains:
+  gallery_engagement:
+    sources:
+      - api://old-gallery/submissions
+      - kafka://gallery.events
+    raw:
+      - s3://edu-gallery-lake/raw/gallery_engagement/artwork_submissions
+      - s3://edu-gallery-lake/raw/gallery_engagement/events
+    lakehouse:
+      bronze:
+        - iceberg://gallery.bronze_artwork_submissions
+      silver:
+        - iceberg://gallery.silver_artwork_submissions
+      gold:
+        - iceberg://gallery.gold_artwork_engagement_daily
+        - iceberg://gallery.gold_artist_features
+  young_artist_profile:
+    sources:
+      - file://old-gallery-admin/artist_profiles.csv
+    raw:
+      - s3://edu-gallery-lake/raw/young_artist_profile/artist_profiles
+    lakehouse:
+      bronze:
+        - iceberg://gallery.bronze_artist_profiles
+      silver:
+        - iceberg://gallery.silver_artist_profiles
+      gold:
+        - iceberg://gallery.gold_artist_features

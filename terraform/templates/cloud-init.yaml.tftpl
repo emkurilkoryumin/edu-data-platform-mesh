@@ -1,0 +1,102 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - jq
+
+write_files:
+  - path: /opt/${platform_name}/.env
+    owner: ubuntu:ubuntu
+    permissions: "0600"
+    content: |
+      PROJECT_NAME=${platform_name}
+      ENVIRONMENT=${environment}
+      S3_ENDPOINT_URL=${s3_endpoint_url}
+      S3_BUCKET=${s3_bucket}
+      S3_ACCESS_KEY=${s3_access_key}
+      S3_SECRET_KEY=${s3_secret_key}
+      S3_REGION=${s3_region}
+      KAFKA_BOOTSTRAP_SERVERS=${kafka_bootstrap}
+      KAFKA_USERNAME=${kafka_username}
+      KAFKA_PASSWORD=${kafka_password}
+      TELEGRAM_BOT_TOKEN=${telegram_bot_token}
+      TELEGRAM_CHAT_ID=${telegram_chat_id}
+      SLACK_WEBHOOK_URL=${slack_webhook_url}
+      AIRFLOW_ADMIN_USERNAME=admin
+      AIRFLOW_ADMIN_PASSWORD=admin
+
+  - path: /opt/${platform_name}/docker-compose.airflow.yml
+    owner: ubuntu:ubuntu
+    permissions: "0644"
+    content: |
+      services:
+        postgres:
+          image: postgres:16
+          environment:
+            POSTGRES_USER: airflow
+            POSTGRES_PASSWORD: airflow
+            POSTGRES_DB: airflow
+          volumes:
+            - postgres-data:/var/lib/postgresql/data
+
+        redis:
+          image: redis:7-alpine
+
+        airflow-init:
+          image: apache/airflow:2.9.3-python3.11
+          depends_on:
+            - postgres
+            - redis
+          env_file: .env
+          environment:
+            AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+            AIRFLOW__CORE__EXECUTOR: LocalExecutor
+            AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+          command: >
+            bash -c "airflow db migrate &&
+            airflow users create
+            --username admin --password admin
+            --firstname Gallery --lastname Admin
+            --role Admin --email admin@example.com || true"
+
+        airflow-webserver:
+          image: apache/airflow:2.9.3-python3.11
+          depends_on:
+            - airflow-init
+          env_file: .env
+          environment:
+            AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+            AIRFLOW__CORE__EXECUTOR: LocalExecutor
+            AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+          ports:
+            - "8080:8080"
+          volumes:
+            - ./dags:/opt/airflow/dags
+          command: webserver
+
+        airflow-scheduler:
+          image: apache/airflow:2.9.3-python3.11
+          depends_on:
+            - airflow-init
+          env_file: .env
+          environment:
+            AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+            AIRFLOW__CORE__EXECUTOR: LocalExecutor
+            AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+          volumes:
+            - ./dags:/opt/airflow/dags
+          command: scheduler
+
+      volumes:
+        postgres-data:
+
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker ubuntu
+  - mkdir -p /opt/${platform_name}/dags
+  - chown -R ubuntu:ubuntu /opt/${platform_name}
+  - cd /opt/${platform_name} && docker compose -f docker-compose.airflow.yml up -d
+
+final_message: "Edu Gallery Data Platform VM bootstrap finished. Airflow is exposed on port 8080."

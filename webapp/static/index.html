@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Онлайн-галерея юных художников</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Embedded analytics</p>
+        <h1>Онлайн-галерея юных художников</h1>
+        <p class="lead">
+          Локальная демонстрационная витрина проекта. Она открывается без npm install и показывает
+          drill-down по выставкам, а React-исходники для задания сохранены в <code>webapp/src</code>.
+        </p>
+        <div class="links">
+          <a href="http://localhost:8080/dags/gallery_raw_ingestion/grid" target="_blank">Airflow DAG</a>
+          <a href="http://localhost:3000/d/gallery-realtime/online-gallery-real-time-activity" target="_blank">Grafana dashboard</a>
+          <a href="http://localhost:4000/cubejs-api/v1/load?query=%7B%22measures%22%3A%5B%22ArtworkEngagement.views%22%5D%2C%22dimensions%22%3A%5B%22ArtworkEngagement.exhibitionId%22%5D%7D" target="_blank">Cube API data</a>
+          <a href="http://localhost:9001" target="_blank">MinIO</a>
+        </div>
+        <p class="hint">
+          Если сервис просит логин: Airflow <code>admin/admin</code>, MinIO <code>gallery/gallery-secret</code>.
+          Grafana открывает сразу готовый realtime-дашборд.
+        </p>
+      </section>
+
+      <section class="toolbar">
+        <button id="reset">Все выставки</button>
+        <span id="status">Drill-down: выставки</span>
+      </section>
+
+      <section class="card">
+        <div id="chart" class="chart"></div>
+      </section>
+
+      <section id="metrics" class="grid"></section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

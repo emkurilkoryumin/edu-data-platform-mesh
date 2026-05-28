@@ -1,0 +1,18 @@
+cloud_id  = "b1gxxxxxxxxxxxxxxxxx"
+folder_id = "b1gxxxxxxxxxxxxxxxxx"
+zone      = "ru-central1-a"
+
+platform_name = "edu-gallery-platform"
+environment   = "stage"
+
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+trusted_cidr_blocks = ["YOUR_PUBLIC_IP/32"]
+
+# Must be globally unique in Yandex Object Storage.
+bucket_name = "edu-gallery-platform-stage-lake-your-suffix"
+
+kafka_user_password = "CHANGE_ME_STRONG_PASSWORD"
+
+telegram_bot_token = ""
+telegram_chat_id   = ""
+slack_webhook_url  = ""

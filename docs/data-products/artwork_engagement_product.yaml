@@ -1,0 +1,54 @@
+name: artwork_engagement
+domain: gallery_engagement
+version: 1.0.0
+owner:
+  business: online_gallery_product_team
+  technical: data_platform_engineer
+description: Engagement analytics for young artists online gallery.
+interfaces:
+  batch_raw:
+    type: s3_parquet
+    uri: s3://edu-gallery-lake/raw/gallery_engagement/artwork_submissions/
+    schema:
+      - submission_id:string
+      - artist_id:string
+      - artwork_id:string
+      - submitted_at:timestamp
+      - technique:string
+      - category:string
+      - artist_age:int
+      - moderation_score:double
+      - is_published:boolean
+  streaming_input:
+    type: kafka
+    topic: gallery.events
+    key: event_id
+  streaming_aggregate:
+    type: kafka
+    topic: gallery.occupancy_5m
+  analytical_serving:
+    type: clickhouse
+    tables:
+      - gallery.gold_artwork_engagement_daily
+      - gallery.gallery_occupancy_5m
+sla:
+  batch_freshness_hours: 24
+  realtime_latency_seconds: 120
+  availability_percent: 99
+quality:
+  uniqueness:
+    - submission_id
+  not_null:
+    - submission_id
+    - artist_id
+    - artwork_id
+  ranges:
+    artist_age: [6, 17]
+    moderation_score: [0, 100]
+lineage:
+  sources:
+    - api://old-gallery/submissions
+    - kafka://gallery.events
+  outputs:
+    - iceberg://gallery.gold_artwork_engagement_daily
+    - clickhouse://gallery.gallery_occupancy_5m

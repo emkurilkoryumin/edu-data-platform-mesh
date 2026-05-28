@@ -1,0 +1,54 @@
+{
+  "uid": "gallery-realtime",
+  "title": "Online Gallery Real-time Activity",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Active visitors by exhibition and room",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ClickHouse"
+          },
+          "rawSql": "WITH (SELECT max(window_start) FROM gallery.gallery_occupancy_5m) AS max_time SELECT now() - toIntervalSecond(toUnixTimestamp(max_time) - toUnixTimestamp(window_start)) AS time, concat(exhibition_id, char(32), char(47), char(32), room_id) AS metric, active_visitors FROM gallery.gallery_occupancy_5m WHERE window_start >= max_time - toIntervalMinute(59) ORDER BY time",
+          "format": 0
+        }
+      ]
+    },
+    {
+      "type": "barchart",
+      "title": "Views and likes by exhibition",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ClickHouse"
+          },
+          "rawSql": "WITH (SELECT max(window_start) FROM gallery.gallery_occupancy_5m) AS max_time SELECT exhibition_id, sum(views) AS views, sum(likes) AS likes FROM gallery.gallery_occupancy_5m WHERE window_start >= max_time - toIntervalMinute(59) GROUP BY exhibition_id ORDER BY views DESC",
+          "format": 1
+        }
+      ]
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  }
+}
