@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from edu_platform.etl.gallery_sources import build_artist_profiles, simulate_artwork_submissions
 from edu_platform.quality.validate_raw import assert_valid
 
 
 def main() -> None:
-    output_dir = Path("metadata/quality")
+    output_dir = PROJECT_ROOT / "metadata" / "quality"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     checks = [

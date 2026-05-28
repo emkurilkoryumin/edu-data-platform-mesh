@@ -5,8 +5,19 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from edu_platform.etl.raw_loader import load_artist_profiles_raw, load_artwork_submissions_raw
 from edu_platform.utils.alerts import notify_failure
+
+
+def run_load_artwork_submissions_raw(run_date: str | None = None) -> dict[str, str]:
+    from edu_platform.etl.raw_loader import load_artwork_submissions_raw
+
+    return load_artwork_submissions_raw(run_date=run_date)
+
+
+def run_load_artist_profiles_raw(run_date: str | None = None) -> dict[str, str]:
+    from edu_platform.etl.raw_loader import load_artist_profiles_raw
+
+    return load_artist_profiles_raw(run_date=run_date)
 
 
 default_args = {
@@ -31,13 +42,13 @@ with DAG(
 ) as dag:
     load_api_submissions = PythonOperator(
         task_id="load_artwork_submissions_raw",
-        python_callable=load_artwork_submissions_raw,
+        python_callable=run_load_artwork_submissions_raw,
         op_kwargs={"run_date": "{{ ds }}"},
     )
 
     load_csv_profiles = PythonOperator(
         task_id="load_artist_profiles_raw",
-        python_callable=load_artist_profiles_raw,
+        python_callable=run_load_artist_profiles_raw,
         op_kwargs={"run_date": "{{ ds }}"},
     )
 

@@ -1,30 +1,67 @@
-const exhibitions = [
-  { name: "spring_colors", students: 24, artworks: 41, views: 1200, likes: 215, avgGrade: 83.4 },
-  { name: "digital_future", students: 18, artworks: 35, views: 980, likes: 190, avgGrade: 88.2 },
-  { name: "animals_and_friends", students: 31, artworks: 52, views: 1470, likes: 266, avgGrade: 79.5 }
+const CUBE_API_URL = "/cubejs-api/v1";
+const measures = [
+  "ArtworkEngagement.studentCount",
+  "ArtworkEngagement.artworkCount",
+  "ArtworkEngagement.views",
+  "ArtworkEngagement.likes",
+  "ArtworkEngagement.avgGrade"
 ];
-
-const drilldown = {
-  spring_colors: [
-    { name: "6-9", students: 7, artworks: 12, views: 280, likes: 44, avgGrade: 78.5 },
-    { name: "10-13", students: 11, artworks: 18, views: 560, likes: 101, avgGrade: 84.2 },
-    { name: "14-17", students: 6, artworks: 11, views: 360, likes: 70, avgGrade: 87.4 }
-  ],
-  digital_future: [
-    { name: "10-13", students: 5, artworks: 9, views: 260, likes: 46, avgGrade: 82.7 },
-    { name: "14-17", students: 13, artworks: 26, views: 720, likes: 144, avgGrade: 90.3 }
-  ],
-  animals_and_friends: [
-    { name: "6-9", students: 19, artworks: 31, views: 910, likes: 165, avgGrade: 77.9 },
-    { name: "10-13", students: 12, artworks: 21, views: 560, likes: 101, avgGrade: 82.1 }
-  ]
-};
 
 let selected = null;
 
+async function cubeLoad(query) {
+  const response = await fetch(`${CUBE_API_URL}/load`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cube API returned ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return payload.data || [];
+}
+
+function normalizeRows(rows, dimension) {
+  return rows.map((row) => ({
+    name: row[dimension],
+    students: Number(row["ArtworkEngagement.studentCount"] || 0),
+    artworks: Number(row["ArtworkEngagement.artworkCount"] || 0),
+    views: Number(row["ArtworkEngagement.views"] || 0),
+    likes: Number(row["ArtworkEngagement.likes"] || 0),
+    avgGrade: Number(row["ArtworkEngagement.avgGrade"] || 0).toFixed(1)
+  }));
+}
+
+async function loadRows() {
+  const dimension = selected ? "ArtworkEngagement.ageGroup" : "ArtworkEngagement.exhibitionId";
+  const query = {
+    measures,
+    dimensions: [dimension],
+    filters: selected
+      ? [{ member: "ArtworkEngagement.exhibitionId", operator: "equals", values: [selected] }]
+      : [],
+    order: { "ArtworkEngagement.views": "desc" }
+  };
+
+  const data = await cubeLoad(query);
+  return normalizeRows(data, dimension);
+}
+
 function render(rows) {
-  const maxViews = Math.max(...rows.map((row) => row.views));
-  document.querySelector("#chart").innerHTML = rows.map((row) => `
+  const chart = document.querySelector("#chart");
+  const metrics = document.querySelector("#metrics");
+  const maxViews = Math.max(...rows.map((row) => row.views), 1);
+
+  if (!rows.length) {
+    chart.innerHTML = "<p class=\"empty\">Нет данных из Cube API</p>";
+    metrics.innerHTML = "";
+    return;
+  }
+
+  chart.innerHTML = rows.map((row) => `
     <button class="bar-row" data-name="${row.name}">
       <span class="bar-label">${row.name}</span>
       <span class="bar-track"><span class="bar-fill" style="width: ${(row.views / maxViews) * 100}%"></span></span>
@@ -32,7 +69,7 @@ function render(rows) {
     </button>
   `).join("");
 
-  document.querySelector("#metrics").innerHTML = rows.map((row) => `
+  metrics.innerHTML = rows.map((row) => `
     <button class="metric" data-name="${row.name}">
       <span>${row.name}</span>
       <strong>${row.views.toLocaleString("ru-RU")}</strong>
@@ -41,20 +78,34 @@ function render(rows) {
   `).join("");
 
   document.querySelectorAll("[data-name]").forEach((item) => {
-    item.addEventListener("click", () => {
-      if (!selected && drilldown[item.dataset.name]) {
+    item.addEventListener("click", async () => {
+      if (!selected) {
         selected = item.dataset.name;
         document.querySelector("#status").textContent = `Drill-down: ${selected} -> возрастные группы`;
-        render(drilldown[selected]);
+        await refresh();
       }
     });
   });
 }
 
-document.querySelector("#reset").addEventListener("click", () => {
+function renderError(error) {
+  document.querySelector("#chart").innerHTML = `<p class="error">${error.message}</p>`;
+  document.querySelector("#metrics").innerHTML = "";
+}
+
+async function refresh() {
+  document.querySelector("#chart").innerHTML = "<p class=\"empty\">Загрузка данных из Cube API...</p>";
+  try {
+    render(await loadRows());
+  } catch (error) {
+    renderError(error);
+  }
+}
+
+document.querySelector("#reset").addEventListener("click", async () => {
   selected = null;
   document.querySelector("#status").textContent = "Drill-down: выставки";
-  render(exhibitions);
+  await refresh();
 });
 
-render(exhibitions);
+refresh();

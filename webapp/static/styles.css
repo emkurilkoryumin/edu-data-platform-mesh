@@ -141,6 +141,17 @@ button {
   color: #d8d1c4;
 }
 
+.empty,
+.error {
+  margin: 0;
+  color: #575047;
+  font-weight: 800;
+}
+
+.error {
+  color: #991b1b;
+}
+
 @media (max-width: 680px) {
   .bar-row {
     grid-template-columns: 1fr;
